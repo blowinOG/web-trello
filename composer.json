@@ -1,0 +1,23 @@
+{
+    "name": "blowinog/web-trello",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "blowinOG",
+            "email": "fhdfff@bk.ru"
+        }
+    ],
+    "require": {
+        "illuminate/database": "*",
+        "illuminate/events": "*",
+        "monolog/monolog": "*",
+        "vlucas/phpdotenv": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/",
+            "Src\\": "src/"
+        }
+    }
+}
