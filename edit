@@ -1,39 +1,37 @@
-# Стенд для практики: Nginx + PHP-FPM + PostgreSQL
+# Учебный стенд: Nginx + PHP-FPM + PostgreSQL
 
-Песочница для отработки навыков Docker Compose. Включает Nginx (reverse-proxy), PHP-FPM 8.5 (чистый PHP) и PostgreSQL 18. Все образы собираются локально из `docker/`.
+Песочница для практики Docker Compose. Стек: Nginx (reverse-proxy), PHP-FPM 8.5 (чистый PHP) и PostgreSQL 18. Образы собираются локально из `docker/`.
 
 ## Быстрый старт
 
-```bash
-make init && make up && make composer
-```
+    make init && make up && make composer
 
-* `make init` — создает `.env` и прописывает ваши UID/GID.
+* `make init` — создает `.env` с вашими UID/GID.
 * `make up` — собирает и запускает контейнеры.
-* `make composer` — ставит зависимости в `app/vendor/`.
+* `make composer` — ставит PHP-зависимости в `app/vendor/`.
 
 **Доступы:**
 * Сайт: http://127.0.0.1:8080/
 * Health-check: http://127.0.0.1:8080/health.php
-* PostgreSQL: `127.0.0.1:5432` (данные в `.env`)
+* PostgreSQL: `127.0.0.1:5432` (пароли в `.env`)
 
 ## Когда нужен рестарт или пересборка
 
-* **Правки в `app/` (PHP):** достаточно обновить страницу (F5).
-* **Правки в конфигах** (`docker/nginx/`, `php.ini` и т.д.): нужен `docker compose restart <сервис>`.
-* **Правки в `Dockerfile` или `composer.json`:** нужен `make build && make up` (и `make composer` при изменении зависимостей).
+* **Код в `app/` (PHP):** изменения видны сразу (F5).
+* **Конфиги** (`docker/nginx/`, `php.ini` и т.д.): нужен `docker compose restart <сервис>`.
+* **`Dockerfile` или `composer.json`:** нужен `make build && make up` (и `make composer`, если менялись зависимости).
 
-## Ловушка: initdb выполняется только один раз
+## Ловушка: initdb срабатывает только один раз
 
-SQL-скрипты из `docker/postgres/initdb/` применяются только при создании нового тома `pgdata`. Если вы их изменили, а база уже была создана, изменения не применятся.
+SQL-скрипты из `docker/postgres/initdb/` применяются только при создании нового тома `pgdata`. Если база уже была создана, правки в SQL не применятся.
 
-Решение — снести том и запустить заново (удалит все данные):
-```bash
-make clean && make up
-```
-Если база уже есть, но нужно применить настройки мониторинга, используйте идемпотентную команду: `make pg-monitoring`.
+Решение — снести том и поднять заново (удалит все данные):
 
-## Мониторинг и логирование
+    make clean && make up
+
+Если база есть, но нужно донастроить мониторинг, используйте `make pg-monitoring` (безопасно, данные не удаляет).
+
+## Мониторинг и логи
 
 Стенд собирается по уровням:
 
@@ -45,12 +43,10 @@ make clean && make up
 
 *Для уровня с логами выделите Docker минимум 6 ГБ RAM.*
 
-```bash
-make mon-up      # Запуск мониторинга
-make mon-down    # Отключение мониторинга
-make logs-up     # Запуск логов
-make logs-down   # Отключение логов
-```
+    make mon-up      # Запуск мониторинга
+    make mon-down    # Отключение мониторинга
+    make logs-up     # Запуск логов
+    make logs-down   # Отключение логов
 
 ### Адреса сервисов
 
@@ -82,24 +78,25 @@ make logs-down   # Отключение логов
 Также добавлены 4 панели в Grafana и 2 алерта (`TrelloHighBusinessErrorRate`, `TrelloSlowDbQueries`).
 
 ### 3. Как проверить
-1. Запустить стек: `docker compose -f compose.yaml -f compose.monitoring.yaml up -d`
+1. Запустить стек:
+
+    docker compose -f compose.yaml -f compose.monitoring.yaml up -d
+
 2. Открыть сайт (`http://127.0.0.1:8080`), создать карточку или вызвать ошибку валидации (пустая форма).
 3. Проверить метрики:
-   ```bash
-   docker compose exec nginx curl -s http://localhost:8081/metrics.php | grep trello_
-   ```
+
+    docker compose exec nginx curl -s http://localhost:8081/metrics.php | grep trello_
+
 4. Смотреть графики в Grafana (дашборд "Обзор сервиса").
 
 ## Структура
 
-```
-app/              — код приложения (PHP)
-docker/           — Dockerfile и конфиги (nginx, php, postgres, prometheus, grafana)
-docs/runbooks/    — инструкции к алертам
-compose.yaml      — базовая оркестрация
-compose.monitoring.yaml — стек мониторинга
-compose.logging.yaml    — стек логов
-```
+    app/              — код приложения (PHP)
+    docker/           — Dockerfile и конфиги (nginx, php, postgres, prometheus, grafana)
+    docs/runbooks/    — инструкции к алертам
+    compose.yaml      — базовая оркестрация
+    compose.monitoring.yaml — стек мониторинга
+    compose.logging.yaml    — стек логов
 
 ## Особенности ОС
 * **Windows/WSL2:** Запускайте проект строго внутри файловой системы Linux (например, `~/projects/`), а не на диске `C:`. Иначе будут проблемы с правами (UID/GID).
